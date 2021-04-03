@@ -1,4 +1,4 @@
-from snake_env import Snake
+from snake_env_genetic import Snake
 
 import random
 import numpy as np
@@ -53,7 +53,7 @@ class DQN:
             else:
                 model.add(Dense(self.layer_sizes[i], activation='relu'))
         model.add(Dense(self.action_space, activation='softmax'))
-        model.compile(loss='mse', optimizer=Adam(lr=self.learning_rate))
+        #model.compile(loss='mse', optimizer=Adam(lr=self.learning_rate))
         return model
 
     def remember(self, state, action, reward, next_state, done):
@@ -97,7 +97,7 @@ class DQN:
 def train_dqn(episode, env):
 
     sum_of_rewards = []
-    
+    generationAve = []
     agent = DQN(env, params)
     agents = []
     for _ in range(params['Population Size']):
@@ -110,28 +110,30 @@ def train_dqn(episode, env):
             
             state = env.reset()
             state = np.reshape(state, (1, env.state_space))
-            score = 0
+            #score = 0
             max_steps = 10000
             for i in range(max_steps):
                 action = agent.act(state)
                 # print(action)
                 prev_state = state
                 next_state, reward, done, _ = env.step(action)
-                score += reward
+                #score += reward
                 next_state = np.reshape(next_state, (1, env.state_space))
-                agent.remember(state, action, reward, next_state, done)
+                #agent.remember(state, action, reward, next_state, done)
                 state = next_state
-                if params['batch_size'] > 1:
-                    agent.replay()
+              #  if params['batch_size'] > 1:
+                    #agent.replay()
                 if done:
-                    print(f'final state before dying: {str(prev_state)}')
-                    print(f'episode: {e+1}/{episode}, score: {score}')
-                    snakes_in_generation.append((score, agent))
+                    #print(f'final state before dying: {str(prev_state)}')
+                    #print(f'episode: {e+1}/{episode}, score: {score}')
+                    snakes_in_generation.append((env.fitness, agent))
                     break
-            sum_of_rewards.append(score)
-            
-        #print(evolve_population(snakes_in_generation))
+        sum_of_rewards.append(env.fitness)
+
         agents = evolve_population(snakes_in_generation)
+
+    generationAve.append(sum(sum_of_rewards) / len(sum_of_rewards))
+
     #print(len(agents))
     #print(snakes_in_generation)
     return sum_of_rewards
@@ -143,6 +145,13 @@ def ranked_networks(fitness_agents):
 def evolve_population(fitness_agents):
     # rank by fitness
     networks = ranked_networks(fitness_agents)
+    scores = [fa[0] for fa in sorted(fitness_agents, key=lambda x: x[0], reverse=True)]
+    print("Top Scores")
+    print(sum(scores[:params['evolve_size']]) / params['evolve_size'])
+    print("Bottom Scores")
+    print(sum(scores[params['evolve_size']:]) / params['evolve_size'])
+    print(scores[0])
+    #print(scores)
 
     # # keep pick top [:evolve_size]
     evolved = networks[:params['evolve_size']]
@@ -174,11 +183,13 @@ def evolve_population(fitness_agents):
     return evolved
             
 def mutation_factor():
+    #print("mutation factor")
+    #print(1 + ((random.random() - 0.5) * 3 + (random.random() - 0.5)))
     return 1 + ((random.random() - 0.5) * 3 + (random.random() - 0.5))
 
 
 def mutate(network):
-    print('mutating')
+    #print('mutating')
     elems = network.weights()
     for i, elem in enumerate(elems):
         for j, layer in enumerate(elem):
@@ -230,14 +241,14 @@ if __name__ == '__main__':
     params['epsilon_min'] = .01
     params['epsilon_decay'] = .995
     params['learning_rate'] = 0.00025
-    params['layer_sizes'] = [128, 128, 128]
-    params['Population Size'] = 100
-    params['evolve_size'] = 10
-    params['mutate_chance'] = 0.8
+    params['layer_sizes'] = [21, 16, 3]
+    params['Population Size'] = 1000
+    params['evolve_size'] = 300
+    params['mutate_chance'] = 0.7
 
 
     results = dict()
-    ep = 50
+    ep = 100
 
     # for batchsz in [1, 10, 100, 1000]:
     #     print(batchsz)

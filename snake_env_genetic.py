@@ -25,6 +25,11 @@ SNAKE_START_LOC_V = 0
 APPLE_SHAPE = 'circle'
 APPLE_COLOR = 'green'
 
+LENGTH_WEIGHT = 10000
+ANGLE_WEIGHT = 5000
+DISTANCE_WEIGHT = 50
+
+
 class Snake(gym.Env):
 
     def __init__(self, human=False, env_info={'state_space':None}):
@@ -33,8 +38,10 @@ class Snake(gym.Env):
         self.done = False
         self.seed()
         self.reward = 0
+        self.fitness = 0
         self.action_space = 4
         self.state_space = 12
+        self.age = 0
 
         self.total, self.maximum = 0, 0
         self.human = human
@@ -87,6 +94,12 @@ class Snake(gym.Env):
         self.win.onkey(self.go_down, 'Down')
         self.win.onkey(self.go_left, 'Left')
 
+
+    def set_fitness(self):
+        self.fitness = len(self.snake_body) * 2 + self.age
+ 
+
+
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
@@ -97,6 +110,7 @@ class Snake(gym.Env):
         return apple_x, apple_y
     
     def move_snake(self):
+        self.age += 1
         if self.snake.direction == 'stop':
             self.reward = 0
         if self.snake.direction == 'up':
@@ -214,6 +228,8 @@ class Snake(gym.Env):
         self.snake.direction = 'stop'
         self.reward = 0
         self.total = 0
+        self.fitness = 0
+        self.age = 0
         self.done = False
 
         state = self.get_state()
@@ -223,6 +239,7 @@ class Snake(gym.Env):
 
     def run_game(self):
         reward_given = False
+        self.set_fitness()
         self.win.update()
         self.move_snake()
         if self.move_apple():
