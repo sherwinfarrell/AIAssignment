@@ -42,6 +42,9 @@ class DQN:
         return model
 
 
+    def shape(self):
+        return np.array(self.weights).shape
+
     def remember(self, state, action, reward, next_state, done):
         self.memory.append((state, action, reward, next_state, done))
 

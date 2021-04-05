@@ -41,7 +41,7 @@ class Snake(gym.Env):
         self.env_info = env_info
 
         ## GAME CREATION WITH TURTLE (RENDER?)
-        # screen/background
+        screen/background
         self.win = turtle.Screen()
         self.win.title(GAME_TITLE)
         self.win.bgcolor(BG_COLOR)
@@ -49,7 +49,7 @@ class Snake(gym.Env):
         self.win.setup(width=PIXEL_W+32, height=PIXEL_H+32)
                 
         # snake
-        self.snake = turtle.Turtle()
+        # self.snake = turtle.Turtle()
         self.snake.shape(SNAKE_SHAPE)
         self.snake.speed(0)
         self.snake.penup()

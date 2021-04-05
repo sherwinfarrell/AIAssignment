@@ -96,7 +96,7 @@ class Snake(gym.Env):
 
 
     def set_fitness(self):
-        self.fitness = len(self.snake_body) * 2 + self.age
+        self.fitness = len(self.snake_body) * 5 + self.age * 2 + self.snake.distance(self.apple)
  
 
 

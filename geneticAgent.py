@@ -44,6 +44,9 @@ class DQN:
     def weights(self):
         return [layer.get_weights() for layer in self.model.layers]
 
+    def shape(self):
+        return np.array(self.weights).shape
+
 
     def build_model(self):
         model = Sequential()
@@ -61,6 +64,7 @@ class DQN:
 
 
     def act(self, state):
+
 
         if np.random.rand() <= self.epsilon:
             return random.randrange(self.action_space)
@@ -89,9 +93,7 @@ class DQN:
         ind = np.array([i for i in range(self.batch_size)])
         targets_full[[ind], [actions]] = targets
 
-        #self.model.fit(states, targets_full, epochs=1, verbose=0)
-        if self.epsilon > self.epsilon_min:
-            self.epsilon *= self.epsilon_decay
+
 
 
 def train_dqn(episode, env):
@@ -110,14 +112,14 @@ def train_dqn(episode, env):
             
             state = env.reset()
             state = np.reshape(state, (1, env.state_space))
-            #score = 0
+            score = 0
             max_steps = 10000
             for i in range(max_steps):
                 action = agent.act(state)
                 # print(action)
                 prev_state = state
                 next_state, reward, done, _ = env.step(action)
-                #score += reward
+                score += reward
                 next_state = np.reshape(next_state, (1, env.state_space))
                 #agent.remember(state, action, reward, next_state, done)
                 state = next_state
@@ -146,13 +148,16 @@ def evolve_population(fitness_agents):
     # rank by fitness
     networks = ranked_networks(fitness_agents)
     scores = [fa[0] for fa in sorted(fitness_agents, key=lambda x: x[0], reverse=True)]
-    print("Top Scores")
-    print(sum(scores[:params['evolve_size']]) / params['evolve_size'])
-    print("Bottom Scores")
-    print(sum(scores[params['evolve_size']:]) / params['evolve_size'])
-    print(scores[0])
-    #print(scores)
+    # print("Top Scores")
+    # print(sum(scores[:params['evolve_size']]) / params['evolve_size'])
+    # print("Bottom Scores")
+    # print(sum(scores[params['evolve_size']:]) / params['evolve_size'])
 
+    print(scores)
+    print("Top Scores")    
+    print(scores[:params['evolve_size']])
+    print("Average Score")
+    print(sum(scores)/ len(scores))
     # # keep pick top [:evolve_size]
     evolved = networks[:params['evolve_size']]
     # print('init_evolved:',len(evolved))
@@ -185,7 +190,7 @@ def evolve_population(fitness_agents):
 def mutation_factor():
     #print("mutation factor")
     #print(1 + ((random.random() - 0.5) * 3 + (random.random() - 0.5)))
-    return 1 + ((random.random() - 0.5) * 3 + (random.random() - 0.5))
+    return 1 + ((random.random() - 0.5) * 3 + (random.random() - 0.5)) * 2
 
 
 def mutate(network):
@@ -235,20 +240,20 @@ if __name__ == '__main__':
 
     params = dict()
     params['name'] = None
-    params['epsilon'] = 1
+    params['epsilon'] = 0.002
     params['gamma'] = .95
     params['batch_size'] = 500
     params['epsilon_min'] = .01
     params['epsilon_decay'] = .995
     params['learning_rate'] = 0.00025
-    params['layer_sizes'] = [21, 16, 3]
+    params['layer_sizes'] = [25, 25, 1]
     params['Population Size'] = 1000
     params['evolve_size'] = 300
     params['mutate_chance'] = 0.7
 
 
     results = dict()
-    ep = 100
+    ep = 10
 
     # for batchsz in [1, 10, 100, 1000]:
     #     print(batchsz)
