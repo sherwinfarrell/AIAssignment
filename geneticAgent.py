@@ -389,8 +389,8 @@ if __name__ == '__main__':
     params['epsilon_decay'] = .2
     params['learning_rate'] = 0.00025
     params['layer_sizes'] = [12, 16, 4]
-    params['Population Size'] = 10
-    params['evolve_size'] = 3
+    params['Population Size'] = 1000
+    params['evolve_size'] = 300
     params['mutate_chance'] = 0.7
 
 
