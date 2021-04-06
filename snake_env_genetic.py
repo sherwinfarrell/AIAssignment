@@ -42,6 +42,8 @@ class Snake(gym.Env):
         self.action_space = 4
         self.state_space = 12
         self.age = 0
+        self.starve = 500
+        self.generation = 1
 
         self.total, self.maximum = 0, 0
         self.human = human
@@ -85,7 +87,7 @@ class Snake(gym.Env):
         self.score.penup()
         self.score.hideturtle()
         self.score.goto(0, 100)
-        self.score.write(f"Total: {self.total}   Highest: {self.maximum}", align='center', font=('Courier', 18, 'normal'))
+        self.score.write(f"Total: {self.total}   Highest: {self.maximum}  Generation: {self.generation}", align='center', font=('Courier', 18, 'normal'))
 
         # control
         self.win.listen()
@@ -96,7 +98,7 @@ class Snake(gym.Env):
 
 
     def set_fitness(self):
-        self.fitness = len(self.snake_body) * 5 + self.age * 2 + self.snake.distance(self.apple)
+        self.fitness = len(self.snake_body) * 2 + self.age 
  
 
 
@@ -111,6 +113,7 @@ class Snake(gym.Env):
     
     def move_snake(self):
         self.age += 1
+
         if self.snake.direction == 'stop':
             self.reward = 0
         if self.snake.direction == 'up':
@@ -125,7 +128,9 @@ class Snake(gym.Env):
         if self.snake.direction == 'left':
             x = self.snake.xcor()
             self.snake.setx(x - 20)
-        
+        self.starve -= 1
+        if self.starve < 0:
+             self.done = True
     
     def go_up(self):
         if self.snake.direction != "down":
@@ -166,13 +171,13 @@ class Snake(gym.Env):
         if self.total >= self.maximum:
             self.maximum = self.total
         self.score.clear()
-        self.score.write(f"Total: {self.total}   Highest: {self.maximum}", align='center', font=('Courier', 18, 'normal'))
+        self.score.write(f"Total: {self.total}   Highest: {self.maximum}  Generation: {self.generation}", align='center', font=('Courier', 18, 'normal'))
 
 
     def reset_score(self):
         self.score.clear()
         self.total = 0
-        self.score.write(f"Total: {self.total}   Highest: {self.maximum}", align='center', font=('Courier', 18, 'normal'))
+        self.score.write(f"Total: {self.total}   Highest: {self.maximum}  Generation: {self.generation}", align='center', font=('Courier', 18, 'normal'))
                     
 
     def add_to_body(self):
@@ -223,6 +228,7 @@ class Snake(gym.Env):
         for body in self.snake_body:
             body.goto(1000, 1000)
 
+        self.starve = 500
         self.snake_body = []
         self.snake.goto(SNAKE_START_LOC_H, SNAKE_START_LOC_V)
         self.snake.direction = 'stop'
@@ -351,7 +357,7 @@ class Snake(gym.Env):
                     int(wall_up or body_up), int(wall_right or body_right), int(wall_down or body_down), int(wall_left or body_left), \
                     int(self.snake.direction == 'up'), int(self.snake.direction == 'right'), int(self.snake.direction == 'down'), int(self.snake.direction == 'left')]
             
-        # print(state)
+        #print(state)
         return state
 
     def bye(self):
