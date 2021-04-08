@@ -49,9 +49,26 @@ class PriorityQueue:
         else:
             self.push(item, priority)
 
-class aStar:
+class Queue:
+    "A container with a first-in-first-out (FIFO) queuing policy."
+    def __init__(self):
+        self.list = []
 
-    """ A* """
+    def push(self,item):
+        "Enqueue the 'item' into the queue"
+        self.list.insert(0,item)
+
+    def pop(self):
+        """
+          Dequeue the earliest enqueued item still in the queue. This
+          operation removes the item from the queue.
+        """
+        return self.list.pop()
+
+    def isEmpty(self):
+        "Returns true if the queue is empty"
+        print("List length: " + str(len(self.list)))
+        return len(self.list) == 0
 
     
 
@@ -59,8 +76,6 @@ class aStar:
 def manhattanHeuristic(problem, node):
     x1, y1 = node[0][0], node[0][1]
     x2, y2 = problem.get_apple_pos()
-    print("Apple Pos" + str(problem.get_apple_pos()))
-    print("ManH Dis Pos: " + str(node))
     return abs(x1 - x2) + abs(y1 - y2)
 
 def euclideanHeuristic(problem, node):
@@ -68,6 +83,7 @@ def euclideanHeuristic(problem, node):
     x2, y2 = problem.get_apple_pos()
     return ( (x1 - x2) ** 2 + (y1 - y2) ** 2 ) ** 0.5
 
+# A*
 def getActions(env):
     startingNode = env.getSnake()
     if env.body_check_apple():
@@ -81,29 +97,46 @@ def getActions(env):
     while not pQueue.isEmpty():
 
         currentNode, actions, prevCost = pQueue.pop()
-        print("Current Node Pos")
-        print(str(currentNode[0][0]) + ", " + str(currentNode[0][1]))
-        print(actions)
 
         if not currentNode[0] in visitedNodes:
             visitedNodes.append(currentNode[0])
 
             if env.node_body_check_apple(currentNode):
-                return actions
+                print("Path found")
+                if not checkDeadend(env, currentNode):
+                    return actions
 
             for nextNode, action, cost in env.getSuccessors(currentNode):
                 if not nextNode[0] in visitedNodes:
-                    print("Action: " + str(action))
-                    print("To Pos: " + str(nextNode[0][0]) + ", " + str(nextNode[0][1]))
                     newAction = actions + [action]
                     newCostToNode = prevCost + cost
                     heuristicCost = newCostToNode + euclideanHeuristic(env, nextNode)
-                    print("ManH Dis: " + str(manhattanHeuristic(env, nextNode)))
-                    print("H Cost: " + str(heuristicCost))
                     pQueue.push((nextNode, newAction, newCostToNode),heuristicCost)
-        else:
-            print("Current Node was in Visited")
     print("EXIT WHILE LOOP")
+    
+# Breadth First Search
+def checkDeadend(env, node):
+    start = node
+    actions = []
+    visited = []
+    visited.append(start)
+    fringe = Queue()
+    fringe.push((start, actions))
+
+    while not fringe.isEmpty():
+        current, actions = fringe.pop()
+        print("Action Length: " + str(len(actions)))
+        if len(actions) == 7:
+            print("Path good")
+            print(actions)
+            return False
+        
+        for successor, action, stepCost in env.getSuccessors(current):
+            if successor not in visited:
+                visited.append(successor)
+                fringe.push((successor, actions + [action]))
+    print("Deadend")
+    return True
 
 def gameLoop(env):
 
@@ -111,6 +144,7 @@ def gameLoop(env):
         max_steps = 10000
         for i in range(max_steps):
             actions = getActions(env)
+            #TODO write BFS like checkDeadend if len(actions) == 0. This BFS should return the longest possible path up till a certain depth, then try A* again
             for a in range(len(actions)):
                 env.step(actions[a])
         env.reset()
