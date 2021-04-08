@@ -67,10 +67,25 @@ class Queue:
 
     def isEmpty(self):
         "Returns true if the queue is empty"
-        print("List length: " + str(len(self.list)))
+        #print("List length: " + str(len(self.list)))
         return len(self.list) == 0
 
-    
+class Stack:
+    "A container with a last-in-first-out (LIFO) queuing policy."
+    def __init__(self):
+        self.list = []
+
+    def push(self,item):
+        "Push 'item' onto the stack"
+        self.list.append(item)
+
+    def pop(self):
+        "Pop the most recently pushed item from the stack"
+        return self.list.pop()
+
+    def isEmpty(self):
+        "Returns true if the stack is empty"
+        return len(self.list) == 0 
 
 
 def manhattanHeuristic(problem, node):
@@ -97,13 +112,13 @@ def getActions(env):
     while not pQueue.isEmpty():
 
         currentNode, actions, prevCost = pQueue.pop()
-
+        #print(currentNode)
         if not currentNode[0] in visitedNodes:
             visitedNodes.append(currentNode[0])
 
             if env.node_body_check_apple(currentNode):
                 print("Path found")
-                if not checkDeadend(env, currentNode):
+                if not checkDeadendDFS(env, currentNode):
                     return actions
 
             for nextNode, action, cost in env.getSuccessors(currentNode):
@@ -125,8 +140,8 @@ def checkDeadend(env, node):
 
     while not fringe.isEmpty():
         current, actions = fringe.pop()
-        print("Action Length: " + str(len(actions)))
-        if len(actions) == 7:
+        #print("Action Length: " + str(len(actions)))
+        if len(actions) == 30:
             print("Path good")
             print(actions)
             return False
@@ -138,12 +153,68 @@ def checkDeadend(env, node):
     print("Deadend")
     return True
 
+# Depth First Search
+def checkDeadendDFS(env, node):
+    start = node
+    actions = []
+    visited = []
+    visited.append(start)
+    fringe = Stack()
+    fringe.push((start, actions))
+    
+    d = 500
+
+    while not fringe.isEmpty():
+        current, actions = fringe.pop()
+        print("Action Length: " + str(len(actions)))
+        if len(actions) == 30:
+            print("Path good")
+            print(actions)
+            return False
+        
+        d -= 1
+        if d < 0:
+            return True
+        
+        for successor, action, stepCost in env.getSuccessors(current):
+            if successor not in visited:
+                visited.append(successor)
+                fringe.push((successor, actions + [action]))
+    print("Deadend")
+    return True
+
+def survive(env):
+    start = env.getSnake()
+    actions = []
+    visited = []
+    visited.append(start)
+    fringe = Queue()
+    fringe.__init__()
+    fringe.push((start, actions))
+    depth = 5
+
+    while not fringe.isEmpty():
+        current, actions = fringe.pop()
+        print("Survival")
+        print(len(actions))
+        if len(actions) > depth:
+            if not checkDeadendDFS(env, current):
+                return actions
+        
+        for successor, action, stepCost in env.getSuccessors(current):
+            if successor not in visited:
+                visited.append(successor)
+                fringe.push((successor, actions + [action]))
+    return actions
+
 def gameLoop(env):
 
     for e in range(20):
         max_steps = 10000
         for i in range(max_steps):
             actions = getActions(env)
+            if actions is None:
+                actions = survive(env)
             #TODO write BFS like checkDeadend if len(actions) == 0. This BFS should return the longest possible path up till a certain depth, then try A* again
             for a in range(len(actions)):
                 env.step(actions[a])
