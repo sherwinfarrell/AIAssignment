@@ -87,7 +87,7 @@ class Snake(gym.Env):
         self.score.penup()
         self.score.hideturtle()
         self.score.goto(0, 100)
-        self.score.write(f"Total: {self.total}   Highest: {self.maximum}  Generation: {self.generation}", align='center', font=('Courier', 18, 'normal'))
+        self.score.write(f"Total: {self.total}   Highest: {self.maximum}  Generation: {self.generation}", align='center', font=('Courier', 12, 'normal'))
 
         # control
         self.win.listen()
@@ -171,13 +171,13 @@ class Snake(gym.Env):
         if self.total >= self.maximum:
             self.maximum = self.total
         self.score.clear()
-        self.score.write(f"Total: {self.total}   Highest: {self.maximum}  Generation: {self.generation}", align='center', font=('Courier', 18, 'normal'))
+        self.score.write(f"Total: {self.total}   Highest: {self.maximum}  Generation: {self.generation}", align='center', font=('Courier', 12, 'normal'))
 
 
     def reset_score(self):
         self.score.clear()
         self.total = 0
-        self.score.write(f"Total: {self.total}   Highest: {self.maximum}  Generation: {self.generation}", align='center', font=('Courier', 18, 'normal'))
+        self.score.write(f"Total: {self.total}   Highest: {self.maximum}  Generation: {self.generation}", align='center', font=('Courier', 12, 'normal'))
                     
 
     def add_to_body(self):
@@ -360,10 +360,13 @@ class Snake(gym.Env):
         #print(state)
         return state
 
+
     def bye(self):
         self.win.bye()
 
 
+    def __del__(self):
+        print ("destroyed")
 
 if __name__ == '__main__':            
     human = True
