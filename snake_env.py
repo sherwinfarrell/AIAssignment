@@ -14,11 +14,11 @@ PIXEL_W = 20*WIDTH   # pixel width + border on both sides
 
 SLEEP = 0.2     # time to wait between steps
 
-GAME_TITLE = 'Snake'
+GAME_TITLE = 'Intelligent Snake System'
 BG_COLOR = 'white'
 
 SNAKE_SHAPE = 'square'
-SNAKE_COLOR = 'black'
+SNAKE_COLOR = 'pink'
 SNAKE_START_LOC_H = 0
 SNAKE_START_LOC_V = 0
 
@@ -193,6 +193,7 @@ class Snake(gym.Env):
                     return True     
 
     def body_check_apple(self):
+        # Not sure what this is doing
         if len(self.snake_body) > 0:
             for body in self.snake_body[:]:
                 if body.distance(self.apple) < 20:
