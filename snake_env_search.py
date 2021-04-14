@@ -139,6 +139,7 @@ class Snake(gym.Env):
             while True:
                 self.apple.x, self.apple.y = self.random_coordinates()
                 self.apple.goto(round(self.apple.x*20), round(self.apple.y*20))
+                print("Apple Position: " + str(self.apple.x) + ", " + str(self.apple.y))
                 if not self.body_check_apple():
                     break
             if not first:
@@ -234,9 +235,8 @@ class Snake(gym.Env):
     
     def getSnake(self):
         parts = []
-        if len(self.snake_body) > 0:
-            for index in range(len(self.snake_body)):
-                parts.append([self.snake_body[index].xcor(), self.snake_body[index].ycor()])
+        for index in range(len(self.snake_body)):
+            parts.append([self.snake_body[index].xcor(), self.snake_body[index].ycor()])
         return parts
 
 

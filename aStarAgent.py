@@ -10,6 +10,7 @@ from keras.optimizers import Adam
 from plot_script import plot_result
 import time
 import heapq
+import sys
 
 class PriorityQueue:
     """
@@ -101,7 +102,7 @@ def euclideanHeuristic(problem, node):
 # A*
 def getActions(env):
     startingNode = env.getSnake()
-    if env.body_check_apple():
+    if env.node_body_check_apple(startingNode):
         return []
 
     visitedNodes = []
@@ -112,7 +113,7 @@ def getActions(env):
     while not pQueue.isEmpty():
 
         currentNode, actions, prevCost = pQueue.pop()
-        #print(currentNode)
+
         if not currentNode[0] in visitedNodes:
             visitedNodes.append(currentNode[0])
 
@@ -128,6 +129,7 @@ def getActions(env):
                     heuristicCost = newCostToNode + euclideanHeuristic(env, nextNode)
                     pQueue.push((nextNode, newAction, newCostToNode),heuristicCost)
     print("EXIT WHILE LOOP")
+    sys.exit()
     
 # Breadth First Search
 def checkDeadend(env, node):
@@ -166,7 +168,7 @@ def checkDeadendDFS(env, node):
 
     while not fringe.isEmpty():
         current, actions = fringe.pop()
-        print("Action Length: " + str(len(actions)))
+        #print("Action Length: " + str(len(actions)))
         if len(actions) == 30:
             print("Path good")
             print(actions)
@@ -213,12 +215,14 @@ def gameLoop(env):
         max_steps = 10000
         for i in range(max_steps):
             actions = getActions(env)
-            if actions is None:
+            print("Actions Got")
+            print(actions)
+            if actions is None or not actions:
                 actions = survive(env)
-            #TODO write BFS like checkDeadend if len(actions) == 0. This BFS should return the longest possible path up till a certain depth, then try A* again
             for a in range(len(actions)):
                 env.step(actions[a])
         env.reset()
+        print("Reset")
                 
             
 
