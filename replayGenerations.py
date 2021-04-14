@@ -27,16 +27,16 @@ def act(model, state):
 
 def playGens(genStart, genEnd, env):
 
-    path = "savedModels/gen"
+    path = "savedModelsScore/gen"
     sum_of_rewards = []
     generationAve = []
     agents = []
 
     i = 1
     for e in range(genStart,genEnd):
-        env.generation = i 
+        env.set_generation(i)
 
-        genPath = path + str(i) 
+        genPath = path + str(i) + ".h5" 
         model = keras.models.load_model(genPath)
         play(model, env)
         i+=1
@@ -113,7 +113,7 @@ if __name__ == '__main__':
     #     env = Snake(env_info=env_info)
     env = Snake()
     
-    out = playGens(1,11,env)
+    out = playGens(1,42,env)
     #return [NeuralNetwork((8, 10, 4)) for _ in range(self.pop_size)]
     #return [TFNN((8, 10, 4)) for _ in range(self.pop_size)]
 

@@ -98,8 +98,13 @@ class Snake(gym.Env):
 
 
     def set_fitness(self):
-        self.fitness = len(self.snake_body) * 2 + self.age 
+        self.fitness = len(self.snake_body) * 10 + self.age 
  
+
+    def set_generation(self, gen):
+        self.generation = gen
+        self.score.write(f"Total: {self.total}   Highest: {self.maximum}  Generation: {self.generation}", align='center', font=('Courier', 12, 'normal'))
+
 
 
     def seed(self, seed=None):

@@ -15,8 +15,8 @@ from tensorflow.keras import Sequential
 from tensorflow.keras.layers import Conv2D, Flatten, Dense
 from random import randint
 import multiprocessing 
-from pathos.multiprocessing import ProcessPool
 from joblib import Parallel, delayed
+import copy
 
 
 class DQN:
@@ -28,6 +28,7 @@ class DQN:
 
 
         self.action_space = env.action_space
+        self.score = 0
         self.state_space = env.state_space
         self.epsilon = params['epsilon'] 
         self.gamma = params['gamma'] 
@@ -160,20 +161,25 @@ def evaluation(agents, env, generation):
         agent.model = None
         
 
-    fitness = Parallel(n_jobs=multiprocessing.cpu_count())(delayed(play)(agent=agents[i], weights = weightList[i], GENERATION = generation) for i in range(len(agents)))
+    fitness = Parallel(n_jobs=multiprocessing.cpu_count())(delayed(play)(agent=agents[i], weights = weightList[i], GENERATION = generation, returnScore = True) for i in range(len(agents)))
 
     for fit, agent in zip(fitness, agents):
 
         agent.fitness = fit[0]
         agent.build_model()
+        agent.score = fit[2]
         agent.set_weights(fit[1])
         sum_of_rewards.append(fit[0])
         snakes_in_generation.append((fit[0], agent))
 
+    bestSnek = [fa[1] for fa in sorted(snakes_in_generation, key=lambda x: x[1].score, reverse=True)]
+    print(bestSnek)
+
+
     return snakes_in_generation, sum_of_rewards
 
 @tensorflow.autograph.experimental.do_not_convert
-def play(agent, weights, GENERATION = 0):
+def play(agent, weights, GENERATION = 0, returnScore = False):
     max_steps = 1000
     snake = Snake()
     agent.build_model()
@@ -198,11 +204,12 @@ def play(agent, weights, GENERATION = 0):
             #print(f'episode: {e+1}/{episode}, score: {score}')
 
             break
-    
+    score = snake.score
     agent.fitness = snake.fitness
     snake.snake.reset()
     snake.apple.reset()
     snake.score.reset()
+    
 
     for body in snake.snake_body:
         body.reset()
@@ -210,6 +217,9 @@ def play(agent, weights, GENERATION = 0):
     fitness = snake.fitness
     snake.win.clear()
     del snake
+    if returnScore:
+        return fitness, agent.weights(), score
+
     return fitness, agent.weights()
 
 def ranked_networks(fitness_agents):
@@ -270,7 +280,7 @@ def evolve_population(fitness_agents,env ,generation):
         weightList.append(agent.weights())
         agent.model = None
 
-
+    print("Selecting Parents")
     parentWeights = Parallel(n_jobs=multiprocessing.cpu_count())(delayed(tournament)(aWeights=weightList[random.randint(0, len(randomNetworks)-1)], bWeights=weightList[random.randint(0, len(randomNetworks)-1)], cWeights=weightList[random.randint(0, len(randomNetworks)-1)],parentA=randomNetworks[random.randint(0, len(randomNetworks)-1)], parentB=randomNetworks[random.randint(0, len(randomNetworks)-1)], parentC=randomNetworks[random.randint(0, len(randomNetworks)-1)], GENERATION = generation) for i in randomNetworks)
 
     parents = []
@@ -291,6 +301,8 @@ def evolve_population(fitness_agents,env ,generation):
         #evolved.append(self.breed(networks[parentA], networks[parentB]))
     print('post_breed:',len(evolved))
 
+    for child in children:
+        print(child.fitness)
 
     # # mutate subset of evolved
     print("mutating")
@@ -300,14 +312,17 @@ def evolve_population(fitness_agents,env ,generation):
         if random.random() < params["mutate_chance"]:
 
             mutation = mutate(networks[random.randint(0, len(networks)-1)],generation)
+
             mutants.append(mutation)
             #evolved.append(GANeuralNetwork(network.dimensions))
     
 
 
     networks = networks + children + mutants
+    for network in networks:
+        print(network.fitness)
     networks.sort(key=lambda Network: Network.fitness, reverse=True) 
-    networks[0].model.save("savedModels/gen" + str(generation))
+    networks[0].model.save("savedModels/gen" + str(generation) + ".h5")
 
     for i in range(int(0.2*len(networks))):              # More random mutations because it helps
         rand = randint(10, len(networks)-1)
@@ -372,6 +387,8 @@ def mutate(network, generation):
         # output.fitness = fitness[0]
         # output.build_model()
         # output.set_weights(fitness[1])
+        fitness = play(networkCopy, networkCopy.weights())
+        networkCopy.fitness = fitness[0]
         
         return networkCopy
     else:
@@ -393,6 +410,8 @@ def mutate(network, generation):
         # output.fitness = fitness[0]
         # output.build_model()
         # output.set_weights(fitness[1])
+        fitness = play(networkCopy, networkCopy.weights())
+        networkCopy.fitness = fitness[0]
         
         return networkCopy
     # #print(weights)
@@ -475,9 +494,11 @@ def breed(aInput, bInput, GENERATION):
     fitnessB = play(btemp, b.weights(), GENERATION)[0]
 
     if (fitnessA > fitnessB):
+        a.fitness = fitnessA
         return a
 
     else:
+        b.fitness = fitnessB
         return b
 
 

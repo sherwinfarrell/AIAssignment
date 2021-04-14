@@ -18,7 +18,7 @@ import multiprocessing
 from pathos.multiprocessing import ProcessPool
 from joblib import Parallel, delayed
 import copy
-
+import csv
 
 class DQN:
 
@@ -161,20 +161,50 @@ def evaluation(agents, env, generation):
         agent.model = None
         
 
-    fitness = Parallel(n_jobs=multiprocessing.cpu_count())(delayed(play)(agent=agents[i], weights = weightList[i], GENERATION = generation) for i in range(len(agents)))
+    fitness = Parallel(n_jobs=multiprocessing.cpu_count())(delayed(play)(agent=agents[i], weights = weightList[i], GENERATION = generation, returnScore = True) for i in range(len(agents)))
+    fitness1 = Parallel(n_jobs=multiprocessing.cpu_count())(delayed(play)(agent=agents[i], weights = weightList[i], GENERATION = generation, returnScore = True) for i in range(len(agents)))
+    fitness2 = Parallel(n_jobs=multiprocessing.cpu_count())(delayed(play)(agent=agents[i], weights = weightList[i], GENERATION = generation, returnScore = True) for i in range(len(agents)))
+    fitness3 = Parallel(n_jobs=multiprocessing.cpu_count())(delayed(play)(agent=agents[i], weights = weightList[i], GENERATION = generation, returnScore = True) for i in range(len(agents)))
 
+    fitnesses = []
+    scores = []
+
+    i = 0
     for fit, agent in zip(fitness, agents):
 
-        agent.fitness = fit[0]
+        agent.fitness = int((fitness[i][0] + fitness1[i][0] + fitness2[i][0] + fitness3[i][0])/len(fitness))
+        fitnesses.append(fit[0])
         agent.build_model()
+        agent.score = fit[2]
+        scores.append(fit[2])
         agent.set_weights(fit[1])
         sum_of_rewards.append(fit[0])
         snakes_in_generation.append((fit[0], agent))
+        i += 1
+
+    with open('fitnesses/gen' + str(generation), 'w') as f:
+        
+        # using csv.writer method from CSV package
+        write = csv.writer(f)
+        
+        write.writerow(fitnesses)
+
+
+    with open('scores/gen' + str(generation), 'w') as f:
+        
+        # using csv.writer method from CSV package
+        write = csv.writer(f)
+        
+        write.writerow(scores)
+
+    bestSnek = [fa[1] for fa in sorted(snakes_in_generation, key=lambda x: x[1].score, reverse=True)]
+    print(bestSnek[0])
+    bestSnek[0].model.save("savedModelsScore/gen" + str(generation) + ".h5")
 
     return snakes_in_generation, sum_of_rewards
 
 @tensorflow.autograph.experimental.do_not_convert
-def play(agent, weights, GENERATION = 0):
+def play(agent, weights, GENERATION = 0, returnScore = False):
     max_steps = 1000
     snake = Snake()
     agent.build_model()
@@ -199,7 +229,7 @@ def play(agent, weights, GENERATION = 0):
             #print(f'episode: {e+1}/{episode}, score: {score}')
 
             break
-    
+    score = len(snake.snake_body)
     agent.fitness = snake.fitness
     snake.snake.reset()
     snake.apple.reset()
@@ -210,6 +240,9 @@ def play(agent, weights, GENERATION = 0):
 
     fitness = snake.fitness
     snake.win.clear()
+    del snake
+    if returnScore:
+        return fitness, agent.weights(), score
     return fitness, agent.weights()
 
 def ranked_networks(fitness_agents):
@@ -237,8 +270,7 @@ def evolve_population(fitness_agents,env ,generation):
     # # keep pick top [:evolve_size]
     evolved = networks[:params['evolve_size']]
 
-    for network in networks:
-        print(network.weights() == None)
+
 
     # print('init_evolved:',len(evolved))
     #print(evolved)
@@ -266,12 +298,10 @@ def evolve_population(fitness_agents,env ,generation):
     print("creating networks")
     randomNetworks = []
     for agent in random.sample(networks,len(evolved)):
-        print(agent.weights() == None)
         randomNetworks.append(agent)
     
 
     for agent in randomNetworks:
-        print(agent.weights() == None)
         weightList.append(agent.weights())
         agent.model = None
 
@@ -296,15 +326,16 @@ def evolve_population(fitness_agents,env ,generation):
     for agent in random.sample(parents,len(evolved)):
         randomParentNetworks.append(agent)
 
+    testlist = []
     for agent in randomParentNetworks:
         weightList.append(agent.weights())
-        agent.model = None
+        testlist.append(DQN(env, params))
 
 
-    childWeights = Parallel(n_jobs=multiprocessing.cpu_count())(delayed(breed)(aWeights=weightList[random.randint(0, len(randomParentNetworks)-1)], bWeights=weightList[random.randint(0, len(randomParentNetworks)-1)],aInput=randomParentNetworks[random.randint(0, len(randomParentNetworks)-1)], bInput=randomParentNetworks[random.randint(0, len(randomParentNetworks)-1)], GENERATION = generation) for i in randomParentNetworks)
+    childWeights = Parallel(n_jobs=multiprocessing.cpu_count())(delayed(breed)(aWeights=weightList[random.randint(0, len(randomParentNetworks)-1)], bWeights=weightList[random.randint(0, len(randomParentNetworks)-1)],aInput=testlist[random.randint(0, len(testlist)-1)], bInput=testlist[random.randint(0, len(testlist)-1)], GENERATION = generation) for i in testlist)
 
     children = []
-    for weight, agent in zip(childWeights, randomParentNetworks):
+    for weight, agent in zip(childWeights, testlist):
         agent.fitness = weight[0]
         agent.build_model()
         agent.set_weights(weight[1])
@@ -320,29 +351,69 @@ def evolve_population(fitness_agents,env ,generation):
     # print('post_breed:',len(evolved))
 
 
-    # # mutate subset of evolved
+    weightList = []
+    randomMutantNetworks = []
+    for agent in range( params['evolve_size']):
+        if random.random() < params["mutate_chance"]:
+            randomMutantNetworks.append(networks[random.randint(0, len(networks)-1)])
+
+    testlist = []
+    for agent in randomMutantNetworks:
+        weightList.append(agent.weights())
+        testlist.append(DQN(env, params))
+
+
+    mutantWeights = Parallel(n_jobs=multiprocessing.cpu_count())(delayed(mutate)(network=testlist[random.randint(0, len(testlist)-1)], weights=weightList[random.randint(0, len(weightList)-1)],  generation = generation) for i in testlist)
     print("mutating")
     mutants = []
-    for i in range(0, params['evolve_size']):
+    for weight, agent in zip(mutantWeights, testlist):
+        agent.fitness = weight[0]
+        agent.build_model()
+        agent.set_weights(weight[1])
 
-        if random.random() < params["mutate_chance"]:
+        mutants.append(agent)
 
-            mutation = mutate(networks[random.randint(0, len(networks)-1)],generation)
-            mutants.append(mutation)
-            #evolved.append(GANeuralNetwork(network.dimensions))
+    # # # mutate subset of evolved
+    # print("mutating")
+    # mutants = []
+    # for i in range(0, params['evolve_size']):
+
+    #     if random.random() < params["mutate_chance"]:
+
+    #         mutation = mutate(networks[random.randint(0, len(networks)-1)],generation)
+    #         mutants.append(mutation)
+    #         #evolved.append(GANeuralNetwork(network.dimensions))
     
 
 
     networks = networks + children + mutants
 
     networks.sort(key=lambda Network: Network.fitness, reverse=True) 
-    networks[0].model.save("savedModels/gen" + str(generation))
+    networks[0].model.save("savedModels/gen" + str(generation) + ".h5")
 
+    emptyNets = []
+    weightList = []
+    for network in networks:
+        weightList.append(network.weights())
+        emptyNets.append(DQN(env,params))
+
+    randints = []
     for i in range(int(0.2*len(networks))):              # More random mutations because it helps
         rand = randint(10, len(networks)-1)
-        networks[rand] = mutate(networks[rand], generation)
-        
+        randints.append(rand)
 
+
+    mutantWeights2 = Parallel(n_jobs=multiprocessing.cpu_count())(delayed(mutate)(network=emptyNets[i], weights=weightList[i],  generation = generation) for i in randints)
+
+    for weight, agent, rand in zip(mutantWeights, testlist, randints):
+        agent.fitness = weight[0]
+        agent.build_model()
+        agent.set_weights(weight[1])
+
+        networks[rand] = copy.deepcopy(agent)
+
+    # for network in networks:
+    #     print(network.fitness)
     networks = networks[:params['Population Size']]
     
     print("Next gen")
@@ -377,9 +448,9 @@ def mutation_factor():
     return 1 + ((random.random() - 0.5) * 3 + (random.random() - 0.5)) 
 
 
-def mutate(network, generation):
-    networkCopy = DQN(env, params)
-    networkCopy.build_model()
+def mutate(network, generation, weights):
+
+    network.set_weights(weights)
     weights_or_biases = random.randint(0, 1)   # choosing randomly if crossover is over bias or weight/neuron/layer
     if weights_or_biases == 0:   
 
@@ -394,15 +465,17 @@ def mutate(network, generation):
         weights[0][random.randint(0, len(weights) - 1)] = np.random.randn()
 
         
-        networkCopy.set_weights_by_layer(weights, layer)
+        network.set_weights_by_layer(weights, layer)
         # output = DQN(env, params)
 
         # fitness = play(output, networkCopy.weights(), generation)
         # output.fitness = fitness[0]
         # output.build_model()
         # output.set_weights(fitness[1])
-        
-        return networkCopy
+        fitness = play(network, network.weights(), generation)
+        network.fitness = fitness[0]
+
+        return fitness
     else:
 
         layer = random.randint(0, len(network.model.layers) - 1)   
@@ -415,15 +488,18 @@ def mutate(network, generation):
 
         biases[1][random.randint(0, len(biases) - 1)] = np.random.randn()
         #print(biases[1][random.randint(0, len(biases) - 1)])
-        networkCopy.set_weights_by_layer(biases, layer)
+        network.set_weights_by_layer(biases, layer)
         # output = DQN(env, params)
 
         # fitness = play(output,networkCopy.weights(), generation)
         # output.fitness = fitness[0]
         # output.build_model()
         # output.set_weights(fitness[1])
-        
-        return networkCopy
+        fitness = play(network, network.weights(), generation)
+        network.fitness = fitness[0]
+
+
+        return fitness
     # #print(weights)
     
     # #print(weights)
@@ -525,8 +601,8 @@ if __name__ == '__main__':
     params['epsilon_decay'] = .2
     params['learning_rate'] = 0.00025
     params['layer_sizes'] = [12, 16, 4]
-    params['Population Size'] = 12
-    params['evolve_size'] = 5
+    params['Population Size'] = 1000
+    params['evolve_size'] = 300
     params['mutate_chance'] = 0.7
 
 
