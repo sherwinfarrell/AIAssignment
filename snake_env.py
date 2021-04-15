@@ -5,6 +5,11 @@ import math
 import gym
 from gym import spaces
 from gym.utils import seeding
+from PIL import Image
+import numpy as np
+import cv2
+
+
 
 
 HEIGHT = 20      # number of steps vertically from wall to wall of screen
@@ -265,6 +270,21 @@ class Snake(gym.Env):
         if action == 3:
             self.go_left()
         self.run_game()
+
+        snake_x = self.snake.xcor()
+        apple_x = self.apple.xcor()
+        snake_y = self.snake.ycor()
+        apple_y = self.apple.ycor()
+
+        np_img = np.zeros((450,450))
+        np_img[snake_x + 225 -1, snake_y + 225 -1 ] = 256
+        np_img[apple_y + 225 - 1, apple_x + 200 -1 ] = 256
+
+
+        for a in self.snake_body:
+            np_img[a.xcor() + 225 -1, a.ycor() + 225 -1 ] = 256
+
+
         state = self.get_state()
         return state, self.reward, self.done, {}
 

@@ -1,4 +1,4 @@
-from snake_env import Snake
+from snake_evn_cnn import Snake
 
 import random
 import numpy as np
@@ -9,6 +9,9 @@ import matplotlib.pyplot as plt
 from keras.optimizers import Adam
 from plot_script import plot_result
 import time
+from collections import deque
+from keras.layers import Dense
+from keras.layers import Dense, Activation, Flatten, Convolution2D
 
 
 
@@ -23,14 +26,14 @@ if __name__ == '__main__':
     epsilon_decay = .995
     lr = 0.00025
     memory = deque(maxlen=3000)
+    state_space = (45,45,1)
 
     model = Sequential()
-    model.add(Dense(248, input_shape=(12,), activation='relu'))
-
-    model.add(Dense(128, activation='relu'))
-    model.add(Dense(248, activation='relu'))
-    model.add(Dense(128, activation='relu'))
-
+    model.add(Convolution2D(32, (4, 4), strides=(1, 1), input_shape=state_space))
+    model.add(Activation("relu"))
+    model.add(Convolution2D(8, (2, 2), strides=(1, 1)))
+    model.add(Activation("relu"))
+    model.add(Flatten())
     model.add(Dense(4, activation='softmax'))
     model.compile(loss='mse', optimizer=Adam(lr=lr))
 
@@ -39,7 +42,7 @@ if __name__ == '__main__':
     scores = []
     for e in range(episodes):
         state = env.reset()
-        state = np.reshape(state, (1, env.state_space))
+        state = np.reshape(state, state_space)
         score = 0
         max_steps = 10000
         for i in range(max_steps):
@@ -47,13 +50,13 @@ if __name__ == '__main__':
             if np.random.rand() <= epsilon:
                 action = random.randrange(4)
             else:
-                act_values = model.predict(state)
+                act_values = model.predict(np.expand_dims(state,axis=0))
                 action =  np.argmax(act_values[0])
             # print(action)
             prev_state = state
             next_state, reward, done, _ = env.step(action)
             score += reward
-            next_state = np.reshape(next_state, (1, env.state_space))
+            next_state = np.reshape(next_state,  state_space)
             memory.append((state, action, reward, next_state, done))
             state = next_state
             if batch_size > 1:
@@ -67,8 +70,8 @@ if __name__ == '__main__':
                     next_states = np.array([i[3] for i in minibatch])
                     dones = np.array([i[4] for i in minibatch])
 
-                    states = np.squeeze(states)
-                    next_states = np.squeeze(next_states)
+                    # states = np.squeeze(states)
+                    # next_states = np.squeeze(next_states)
                     next_states_pred = model.predict_on_batch(next_states)
                     targets = rewards + gamma*(np.amax(next_states_pred, axis=1))*(1-dones)
                     targets_full = model.predict_on_batch(states)
