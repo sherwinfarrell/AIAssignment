@@ -33,7 +33,7 @@ if __name__ == '__main__':
     epsilon_decay = .995
     lr = 0.00025
     memory = deque(maxlen=3000)
-
+    # Two models will be trained for extra stability. 
     model = create_model()
     replicated_model = create_model()
     replicated_model.set_weights(model.get_weights())
