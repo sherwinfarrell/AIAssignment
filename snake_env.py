@@ -276,13 +276,6 @@ class Snake(gym.Env):
         snake_y = self.snake.ycor()
         apple_y = self.apple.ycor()
 
-        np_img = np.zeros((450,450))
-        np_img[snake_x + 225 -1, snake_y + 225 -1 ] = 256
-        np_img[apple_y + 225 - 1, apple_x + 200 -1 ] = 256
-
-
-        for a in self.snake_body:
-            np_img[a.xcor() + 225 -1, a.ycor() + 225 -1 ] = 256
 
 
         state = self.get_state()
