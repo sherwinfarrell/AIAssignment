@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 from keras.optimizers import Adam
 from plot_script import plot_result
 import time
+from datetime import datetime
 
 
 def create_model():
@@ -27,12 +28,13 @@ if __name__ == '__main__':
 
     name = None
     epsilon = 1
-    gamma = .95
+    gamma = .99
     batch_size = 128
     epsilon_min = .01
     epsilon_decay = .995
     lr = 0.00025
     memory = deque(maxlen=3000)
+    min_sample = 512
     # Two models will be trained for extra stability. 
     model = create_model()
     replicated_model = create_model()
@@ -41,13 +43,19 @@ if __name__ == '__main__':
     counter=0
 
 
-    episodes = 20
+    episodes = 150
     env = Snake()
+    rewards_list = []
     scores = []
+
+    datetime1 = datetime.now()
+    datetime2 = None
     for e in range(episodes):
         state = env.reset()
         state = np.reshape(state, (1, env.state_space))
         score = 0
+        current_score = 0
+        current_reward = 0
         max_steps = 10000
         for i in range(max_steps):
             action = None
@@ -58,8 +66,12 @@ if __name__ == '__main__':
                 action =  np.argmax(act_values[0])
             # print(action)
             prev_state = state
-            next_state, reward, done, _ = env.step(action)
-            score += reward
+            next_state, reward, done,env_score, _ = env.step(action)
+            if not done:
+                current_score = env_score
+                if current_score >= 50:
+                    datetime2 = datetime.now()
+            current_reward += reward
             next_state = np.reshape(next_state, (1, env.state_space))
             memory.append((state, action, reward, next_state, done))
             state = next_state
@@ -95,14 +107,32 @@ if __name__ == '__main__':
                         epsilon *= epsilon_decay
             if done:
                 print(f'final state before dying: {str(prev_state)}')
-                print(f'episodes: {e+1}/{episodes}, score: {score}')
+                print(f'episodes: {e+1}/{episodes}, reward: {current_reward}')
+                print(f'episodes: {e+1}/{episodes}, score: {current_score}')
                 break
-        scores.append(score)
+        rewards_list.append(current_reward)
+        scores.append(current_score)
     
+  
+
+    print("The max reward in all the episodes is "+ str(env.maximum))
+    if datetime2:
+        difference = datetime2 - datetime1
+        print(f"The time to first 50 score is : {difference}")
+    
+    plot1 = plt.figure(1)
     plt.plot(range(1,episodes+1),scores)
-    plt.xlabel("episodess", fontsize = 14)
+    plt.xlabel("Episodess", fontsize = 14)
     plt.ylabel("Scores", fontsize = 14)
-    plt.title("Scores For Every episodes")
+    plt.title("Scores For Every Episode")
+    # plt.show()
+
+    plot1 = plt.figure(2)
+    plt.plot(range(1,episodes+1),rewards_list)
+    plt.xlabel("episodess", fontsize = 14)
+    plt.ylabel("Rewards", fontsize = 14)
+    plt.title("Rewards For Every episodes")
     plt.show()
+
     
     

@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 from keras.optimizers import Adam
 from plot_script import plot_result
 import time
+from datetime import datetime
 
 
 
@@ -48,15 +49,17 @@ if __name__ == '__main__':
     model.compile(loss='mse', optimizer=Adam(lr=lr))
 
     # Number of episodes that of the game. Each game will be played till the game is done.
-    episodes = 20
+    episodes = 100
 
     #The game environment that will be used to make the moves. 
     env = Snake()
 
     # To Keep track of the scores. 
     scores = []
-
+    rewards_list = []
     # Start of epsidoes loop. 
+    datetime1 = datetime.now()
+    datetime2 = None
     for e in range(episodes):
 
         #Reset the env and get the state space. 
@@ -67,6 +70,8 @@ if __name__ == '__main__':
         # Neural Net requires shape (None, 12), where None is the placeholder for the input size. 
         state = np.reshape(state, (1, env.state_space))
         score = 0
+        current_reward = 0
+        current_score =0
         max_steps = 10000
         for i in range(max_steps):
             action = None
@@ -82,8 +87,13 @@ if __name__ == '__main__':
             
             prev_state = state
             #Get Next state and save to memory to be used in replay memory for state action next state calculations. 
-            next_state, reward, done, _ = env.step(action)
-            score += reward
+            next_state, reward, done,env_score, _ = env.step(action)
+            if not done:
+                current_score = env_score
+                if current_score >= 50:
+                    datetime2 = datetime.now()
+
+            current_reward += reward
             next_state = np.reshape(next_state, (1, env.state_space))
             memory.append((state, action, reward, next_state, done))
             state = next_state
@@ -131,14 +141,39 @@ if __name__ == '__main__':
             # If the game is done, by loosing mostly then break and print results. 
             if done:
                 print(f'final state before dying: {str(prev_state)}')
-                print(f'episodes: {e+1}/{episodes}, score: {score}')
+                print(f'episodes: {e+1}/{episodes}, reward: {current_reward}')
+                print(f'episodes: {e+1}/{episodes}, score: {current_score}')
                 break
-        scores.append(score)
+        rewards_list.append(current_reward)
+        scores.append(current_score)
     
+    # plt.plot(range(1,episodes+1),rewards_list)
+    # plt.xlabel("episodess", fontsize = 14)
+    # plt.ylabel("Rewards", fontsize = 14)
+    # plt.title("Rewards For Every episodes")
+    # plt.show()
+
+    print("The max reward in all the episodes is "+ str(env.maximum))
+    if datetime2:
+        difference = datetime2 - datetime1
+        print(f"The time to first 50 score is : {difference}")
+
+    # print(scores)
+    print("The mean score over all the epsiode is: ", sum(scores)/episodes)
+    print("The average reward over all the episodes is: ", sum(rewards_list)/episodes)
+
+    plot1 = plt.figure(1)
     plt.plot(range(1,episodes+1),scores)
-    plt.xlabel("episodess", fontsize = 14)
+    plt.xlabel("Episodess", fontsize = 14)
     plt.ylabel("Scores", fontsize = 14)
-    plt.title("Scores For Every episodes")
+    plt.title("Scores For Every Episode")
+    # plt.show()
+
+    plot1 = plt.figure(2)
+    plt.plot(range(1,episodes+1),rewards_list)
+    plt.xlabel("episodess", fontsize = 14)
+    plt.ylabel("Rewards", fontsize = 14)
+    plt.title("Rewards For Every episodes")
     plt.show()
     
     

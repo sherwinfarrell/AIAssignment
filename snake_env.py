@@ -279,7 +279,7 @@ class Snake(gym.Env):
 
 
         state = self.get_state()
-        return state, self.reward, self.done, {}
+        return state, self.reward, self.done, self.total, {}
 
 
     def get_state(self):
