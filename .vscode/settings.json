@@ -1,3 +1,7 @@
 {
+<<<<<<< HEAD
     "python.pythonPath": "venv/bin/python"
+=======
+    "python.pythonPath": "C:\\Users\\sherwin\\anaconda3\\envs\\snakenv\\python.exe"
+>>>>>>> main
 }
