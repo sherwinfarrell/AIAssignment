@@ -90,7 +90,7 @@ if __name__ == '__main__':
             next_state, reward, done,env_score, _ = env.step(action)
             if not done:
                 current_score = env_score
-                if current_score >= 50:
+                if current_score >= 40:
                     datetime2 = datetime.now()
 
             current_reward += reward
@@ -125,15 +125,15 @@ if __name__ == '__main__':
                     new_q_values = rewards + gamma*(np.amax(next_states_qval, axis=1))*(1-dones)
 
                     # Predict the Q_values, which will be adjusted for the current action using the newly calculated q_values.
-                    predicte_q_values = model.predict_on_batch(states)
+                    predicted_q_values = model.predict_on_batch(states)
 
                     ind = np.array([i for i in range(batch_size)])
 
                     # Update the all the predicted values for the current action given the state to the newly calucated value.
-                    predicte_q_values[[ind], [actions]] = new_q_values
+                    predicted_q_values[[ind], [actions]] = new_q_values
 
                     #Fit the neural network with that. 
-                    model.fit(states, predicte_q_values, epochs=1, verbose=0)
+                    model.fit(states, predicted_q_values, epochs=1, verbose=0)
 
                     #Reduce the Epislon using the epsilon decay factor.
                     if epsilon > epsilon_min:
