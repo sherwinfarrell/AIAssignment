@@ -28,6 +28,7 @@ if __name__ == '__main__':
     memory = deque(maxlen=3000)
     state_space = (45,45,1)
 
+    # Updated model to a cnn to learn the state space which is an image now.
     model = Sequential()
     model.add(Convolution2D(32, (4, 4), strides=(1, 1), input_shape=state_space))
     model.add(Activation("relu"))
@@ -54,7 +55,7 @@ if __name__ == '__main__':
                 action =  np.argmax(act_values[0])
             # print(action)
             prev_state = state
-            next_state, reward, done, _ = env.step(action)
+            next_state, reward, done, env_score ,_ = env.step(action)
             score += reward
             next_state = np.reshape(next_state,  state_space)
             memory.append((state, action, reward, next_state, done))

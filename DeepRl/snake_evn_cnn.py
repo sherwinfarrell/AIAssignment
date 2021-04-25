@@ -391,7 +391,7 @@ class Snake(gym.Env):
 
 
         state = new_img
-        return state, self.reward, self.done, {}
+        return state, self.reward, self.done,self.total, {}
 
 
     def get_state(self):

@@ -7,7 +7,6 @@ from collections import deque
 from keras.layers import Dense
 import matplotlib.pyplot as plt
 from keras.optimizers import Adam
-from plot_script import plot_result
 import time
 from datetime import datetime
 
