@@ -39,5 +39,32 @@ function that takes the number of apples a snake gets and the total time it surv
 getting an apple, as otherwise we would get infinite looping snakes.
 
 
+## Deep Reinforcement Learning
+
+The implementation of the Deep Reinforcement Learning Algorithm consists of 3 scripts for the three differen implementations that are  
+1. DQN  
+2. DoubleDQN  
+3. DQN with CNN  
+
+And to accompany these three scripts are the 2 different game environments, the snake_env.py,  taken from  Harder, H. (2020). Snake Played by a Deep Reinforcement Learning Agent,  for the algorithms without a CNN model and a modified snake env snake_env_cnn for supporting agents that use a Cnn Model.
+
+### DQN.py
+
+Contains the script for the Standard DQN algorithm, that is an extension of the agents environment from Harder, H. (2020). Snake Played by a Deep Reinforcement Learning Agent, with modifications made to the learning model that has been used as well as the strucuture of the implementation to improve speed. 
+
+### DoubleDQN.py
+
+Contains the script for the Double DQN algorihtm, that extends the DQN agent with 2 different learning models, the target and an online model, to avoid the overestiamtion problem that the standard DQN faces. 
+
+## DNNDQN.py
+
+The contains the implementation of the standard DQN algorithm with a state space that has been replaced with the calculated image of the game using the coordinates of the sanke and the food repersented in a 2D array that has been implemented in the sanke_env_cnn.py
+
+### Requirements.txt
+
+This contains all the dependencies required to run the different scripts. 
+
+
+
 
 
