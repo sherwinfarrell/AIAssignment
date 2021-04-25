@@ -25,6 +25,14 @@ SNAKE_START_LOC_V = 0
 APPLE_SHAPE = 'circle'
 APPLE_COLOR = 'green'
 
+LENGTH_WEIGHT = 10000
+ANGLE_WEIGHT = 5000
+DISTANCE_WEIGHT = 50
+
+#This environment is altered slightly to include the fitness function for the genetic algorithm, and so that the snake dies
+#after 500 moves to avoid infinite looping snakes. The game logic and state/action space remain unchanged.
+
+
 class Snake(gym.Env):
 
     def __init__(self, human=False, env_info={'state_space':None}):
@@ -33,8 +41,14 @@ class Snake(gym.Env):
         self.done = False
         self.seed()
         self.reward = 0
+        self.fitness = 0
         self.action_space = 4
         self.state_space = 12
+        self.age = 0
+        self.starve = 500
+        self.generation = 1
+        self.startLength = 1
+        self.startLengthCounter = 1
 
         self.total, self.maximum = 0, 0
         self.human = human
@@ -59,7 +73,7 @@ class Snake(gym.Env):
         # snake body, add first element (for location of snake's head)
         self.snake_body = []
         self.add_to_body()
-
+    
         # apple
         self.apple = turtle.Turtle()
         self.apple.speed(0)
@@ -78,7 +92,7 @@ class Snake(gym.Env):
         self.score.penup()
         self.score.hideturtle()
         self.score.goto(0, 100)
-        self.score.write(f"Total: {self.total}   Highest: {self.maximum}", align='center', font=('Courier', 18, 'normal'))
+        self.score.write(f"Total: {self.total}   Highest: {self.maximum}  Generation: {self.generation}", align='center', font=('Courier', 12, 'normal'))
 
         # control
         self.win.listen()
@@ -86,6 +100,17 @@ class Snake(gym.Env):
         self.win.onkey(self.go_right, 'Right')
         self.win.onkey(self.go_down, 'Down')
         self.win.onkey(self.go_left, 'Left')
+
+
+    def set_fitness(self):
+        self.fitness = len(self.snake_body) * 250 + self.age 
+ 
+
+    def set_generation(self, gen):
+        self.generation = gen
+        self.score.write(f"Total: {self.total}   Highest: {self.maximum}  Generation: {self.generation}", align='center', font=('Courier', 12, 'normal'))
+
+
 
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
@@ -97,6 +122,11 @@ class Snake(gym.Env):
         return apple_x, apple_y
     
     def move_snake(self):
+        self.age += 1
+
+        if (self.startLengthCounter < self.startLength):
+            self.add_to_body()
+            self.startLengthCounter += 1
         if self.snake.direction == 'stop':
             self.reward = 0
         if self.snake.direction == 'up':
@@ -111,7 +141,9 @@ class Snake(gym.Env):
         if self.snake.direction == 'left':
             x = self.snake.xcor()
             self.snake.setx(x - 20)
-        
+        self.starve -= 1
+        if self.starve < 0:
+             self.done = True
     
     def go_up(self):
         if self.snake.direction != "down":
@@ -152,16 +184,18 @@ class Snake(gym.Env):
         if self.total >= self.maximum:
             self.maximum = self.total
         self.score.clear()
-        self.score.write(f"Total: {self.total}   Highest: {self.maximum}", align='center', font=('Courier', 18, 'normal'))
+        self.score.write(f"Total: {self.total}   Highest: {self.maximum}  Generation: {self.generation}", align='center', font=('Courier', 12, 'normal'))
 
 
     def reset_score(self):
         self.score.clear()
         self.total = 0
-        self.score.write(f"Total: {self.total}   Highest: {self.maximum}", align='center', font=('Courier', 18, 'normal'))
+        self.score.write(f"Total: {self.total}   Highest: {self.maximum}  Generation: {self.generation}", align='center', font=('Courier', 12, 'normal'))
                     
 
     def add_to_body(self):
+
+        self.starve = 500
         body = turtle.Turtle()
         body.speed(0)
         body.shape('square')
@@ -209,11 +243,15 @@ class Snake(gym.Env):
         for body in self.snake_body:
             body.goto(1000, 1000)
 
+        self.starve = 500
         self.snake_body = []
+        self.startLengthCounter = 1
         self.snake.goto(SNAKE_START_LOC_H, SNAKE_START_LOC_V)
         self.snake.direction = 'stop'
         self.reward = 0
         self.total = 0
+        self.fitness = 0
+        self.age = 0
         self.done = False
 
         state = self.get_state()
@@ -223,6 +261,7 @@ class Snake(gym.Env):
 
     def run_game(self):
         reward_given = False
+        self.set_fitness()
         self.win.update()
         self.move_snake()
         if self.move_apple():
@@ -334,13 +373,16 @@ class Snake(gym.Env):
                     int(wall_up or body_up), int(wall_right or body_right), int(wall_down or body_down), int(wall_left or body_left), \
                     int(self.snake.direction == 'up'), int(self.snake.direction == 'right'), int(self.snake.direction == 'down'), int(self.snake.direction == 'left')]
             
-        # print(state)
+        #print(state)
         return state
+
 
     def bye(self):
         self.win.bye()
 
 
+    def __del__(self):
+        print ("destroyed")
 
 if __name__ == '__main__':            
     human = True
