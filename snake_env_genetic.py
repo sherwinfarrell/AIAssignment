@@ -29,6 +29,9 @@ LENGTH_WEIGHT = 10000
 ANGLE_WEIGHT = 5000
 DISTANCE_WEIGHT = 50
 
+#This environment is altered slightly to include the fitness function for the genetic algorithm, and so that the snake dies
+#after 500 moves to avoid infinite looping snakes. The game logic and state/action space remain unchanged.
+
 
 class Snake(gym.Env):
 
@@ -44,6 +47,8 @@ class Snake(gym.Env):
         self.age = 0
         self.starve = 500
         self.generation = 1
+        self.startLength = 1
+        self.startLengthCounter = 1
 
         self.total, self.maximum = 0, 0
         self.human = human
@@ -68,7 +73,7 @@ class Snake(gym.Env):
         # snake body, add first element (for location of snake's head)
         self.snake_body = []
         self.add_to_body()
-
+    
         # apple
         self.apple = turtle.Turtle()
         self.apple.speed(0)
@@ -98,7 +103,7 @@ class Snake(gym.Env):
 
 
     def set_fitness(self):
-        self.fitness = len(self.snake_body) * 10 + self.age 
+        self.fitness = len(self.snake_body) * 250 + self.age 
  
 
     def set_generation(self, gen):
@@ -119,6 +124,9 @@ class Snake(gym.Env):
     def move_snake(self):
         self.age += 1
 
+        if (self.startLengthCounter < self.startLength):
+            self.add_to_body()
+            self.startLengthCounter += 1
         if self.snake.direction == 'stop':
             self.reward = 0
         if self.snake.direction == 'up':
@@ -186,6 +194,8 @@ class Snake(gym.Env):
                     
 
     def add_to_body(self):
+
+        self.starve = 500
         body = turtle.Turtle()
         body.speed(0)
         body.shape('square')
@@ -235,6 +245,7 @@ class Snake(gym.Env):
 
         self.starve = 500
         self.snake_body = []
+        self.startLengthCounter = 1
         self.snake.goto(SNAKE_START_LOC_H, SNAKE_START_LOC_V)
         self.snake.direction = 'stop'
         self.reward = 0

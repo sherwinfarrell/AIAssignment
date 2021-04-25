@@ -54,9 +54,9 @@ Markdown==3.1.1
 MarkupSafe==1.1.1
 matplotlib==3.2.1
 mistune
-#mkl-fft
-#mkl-random==1.1.0
-#mkl-service==2.3.0
+mkl-fft
+mkl-random==1.1.0
+mkl-service==2.3.0
 nbconvert==5.6.1
 nbformat==5.0.4
 networkx==2.4
@@ -66,7 +66,7 @@ oauthlib==3.1.0
 olefile==0.46
 openpyxl==3.0.3
 opt-einsum==3.1.0
-#pandas==0.24.2
+pandas==0.24.2
 pandocfilters==1.4.2
 parso==0.6.2
 patsy==0.5.1
@@ -89,7 +89,7 @@ PySocks==1.7.1
 python-dateutil==2.8.1
 pytz==2019.3
 PyWavelets==1.1.1
-#pywin32
+pywin32
 pywinpty==0.5.7
 PyYAML==5.3.1
 pyzmq==18.1.1
@@ -106,8 +106,8 @@ six==1.14.0
 soupsieve==2.0
 statsmodels==0.9.0
 tensorboard==2.1.0
-#tensorflow
-#tensorflow-estimator
+tensorflow
+tensorflow-estimator
 termcolor==1.1.0
 terminado==0.8.3
 testpath==0.4.4
