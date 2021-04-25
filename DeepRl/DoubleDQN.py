@@ -28,7 +28,7 @@ if __name__ == '__main__':
 
     name = None
     epsilon = 1
-    gamma = .99
+    gamma = .95
     batch_size = 128
     epsilon_min = .01
     epsilon_decay = .995
@@ -36,14 +36,14 @@ if __name__ == '__main__':
     memory = deque(maxlen=3000)
     min_sample = 512
     # Two models will be trained for extra stability. 
-    model = create_model()
-    replicated_model = create_model()
-    replicated_model.set_weights(model.get_weights())
-    min_counter = 50
+    online_model = create_model()
+    target_model = create_model()
+    target_model.set_weights(online_model.get_weights())
+    min_counter = 20
     counter=0
 
 
-    episodes = 150
+    episodes = 100 
     env = Snake()
     rewards_list = []
     scores = []
@@ -62,14 +62,14 @@ if __name__ == '__main__':
             if np.random.rand() <= epsilon:
                 action = random.randrange(4)
             else:
-                act_values = model.predict(state)
+                act_values = online_model.predict(state)
                 action =  np.argmax(act_values[0])
             # print(action)
             prev_state = state
             next_state, reward, done,env_score, _ = env.step(action)
             if not done:
                 current_score = env_score
-                if current_score >= 50:
+                if current_score >= 40:
                     datetime2 = datetime.now()
             current_reward += reward
             next_state = np.reshape(next_state, (1, env.state_space))
@@ -85,23 +85,32 @@ if __name__ == '__main__':
                     rewards = np.array([i[2] for i in minibatch])
                     next_states = np.array([i[3] for i in minibatch])
                     dones = np.array([i[4] for i in minibatch])
+                    ind = np.array([i for i in range(batch_size)])
+
 
                     states = np.squeeze(states)
                     next_states = np.squeeze(next_states)
-                    next_states_pred = replicated_model.predict_on_batch(next_states)
-                    targets = rewards + gamma*(np.amax(next_states_pred, axis=1))*(1-dones)
-                    targets_full = model.predict_on_batch(states)
 
-                    ind = np.array([i for i in range(batch_size)])
-                    targets_full[[ind], [actions]] = targets
+                    q_next_target = target_model.predict_on_batch(next_states)
+                    q_next_online = online_model.predict_on_batch(next_states)
+                    q_current_online = online_model.predict_on_batch(states)
 
-                    model.fit(states, targets_full, epochs=1, verbose=0)
+                    # Get the max action from the online model
+                    max_actions = np.amax(q_next_online, axis=1)
+                    q_target = q_current_online
+
+                    # Q(S,A) = rewards + gamma * Q(S*, max)action(Q(S*,a)))*(1 - dones)
+                    q_target[[ind], [actions]] = rewards + gamma * q_next_target[[ind],[max_actions.astype(int)]]*(1-dones)
+
+                    
+
+                    online_model.fit(states, q_target, epochs=1, verbose=0)
 
                     if done:
                             counter += 1
 
                     if counter > min_counter:
-                        replicated_model.set_weights(model.get_weights())
+                        target_model.set_weights(online_model.get_weights())
                         counter = 0
                     if epsilon > epsilon_min:
                         epsilon *= epsilon_decay
@@ -119,6 +128,11 @@ if __name__ == '__main__':
     if datetime2:
         difference = datetime2 - datetime1
         print(f"The time to first 50 score is : {difference}")
+    
+        # print(scores)
+    print("The mean score over all the epsiode is: ", sum(scores)/episodes)
+    print("The average reward over all the episodes is: ", sum(rewards_list)/episodes)
+
     
     plot1 = plt.figure(1)
     plt.plot(range(1,episodes+1),scores)
