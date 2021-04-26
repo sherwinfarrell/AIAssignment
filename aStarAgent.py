@@ -1,17 +1,12 @@
 from snake_env_search import Snake
 
-import random
-import numpy as np
-from keras import Sequential
-from collections import deque
-from keras.layers import Dense
-import matplotlib.pyplot as plt
-from keras.optimizers import Adam
-from plot_script import plot_result
-import time
 import heapq
-import sys
+import matplotlib.pyplot as plt
 
+
+"""
+Taken from Berkley AI Pacman Graph Search Questions
+"""
 class PriorityQueue:
     """
       Implements a priority queue data structure. Each inserted item
@@ -50,27 +45,9 @@ class PriorityQueue:
         else:
             self.push(item, priority)
 
-class Queue:
-    "A container with a first-in-first-out (FIFO) queuing policy."
-    def __init__(self):
-        self.list = []
-
-    def push(self,item):
-        "Enqueue the 'item' into the queue"
-        self.list.insert(0,item)
-
-    def pop(self):
-        """
-          Dequeue the earliest enqueued item still in the queue. This
-          operation removes the item from the queue.
-        """
-        return self.list.pop()
-
-    def isEmpty(self):
-        "Returns true if the queue is empty"
-        #print("List length: " + str(len(self.list)))
-        return len(self.list) == 0
-
+"""
+Taken from Berkley AI Pacman Graph Search Questions
+"""
 class Stack:
     "A container with a last-in-first-out (LIFO) queuing policy."
     def __init__(self):
@@ -89,11 +66,17 @@ class Stack:
         return len(self.list) == 0 
 
 
+"""
+Taken from Berkley AI Pacman Graph Search Questions
+"""
 def manhattanHeuristic(problem, node):
     x1, y1 = node[0][0], node[0][1]
     x2, y2 = problem.get_apple_pos()
     return abs(x1 - x2) + abs(y1 - y2)
 
+"""
+Taken from Berkley AI Pacman Graph Search Questions
+"""
 def euclideanHeuristic(problem, node):
     x1, y1 = node[0][0], node[0][1]
     x2, y2 = problem.get_apple_pos()
@@ -118,8 +101,7 @@ def getActions(env):
             visitedNodes.append(currentNode[0])
 
             if env.node_body_check_apple(currentNode):
-                print("Path found")
-                if not checkDeadendDFS(env, currentNode):
+                if not checkDeadendDFS(env, currentNode, len(startingNode)):
                     return actions
 
             for nextNode, action, cost in env.getSuccessors(currentNode):
@@ -128,35 +110,10 @@ def getActions(env):
                     newCostToNode = prevCost + cost
                     heuristicCost = newCostToNode + euclideanHeuristic(env, nextNode)
                     pQueue.push((nextNode, newAction, newCostToNode),heuristicCost)
-    print("EXIT WHILE LOOP")
-    sys.exit()
-    
-# Breadth First Search
-def checkDeadend(env, node):
-    start = node
-    actions = []
-    visited = []
-    visited.append(start)
-    fringe = Queue()
-    fringe.push((start, actions))
 
-    while not fringe.isEmpty():
-        current, actions = fringe.pop()
-        #print("Action Length: " + str(len(actions)))
-        if len(actions) == 30:
-            print("Path good")
-            print(actions)
-            return False
-        
-        for successor, action, stepCost in env.getSuccessors(current):
-            if successor not in visited:
-                visited.append(successor)
-                fringe.push((successor, actions + [action]))
-    print("Deadend")
-    return True
 
 # Depth First Search
-def checkDeadendDFS(env, node):
+def checkDeadendDFS(env, node, maxdepth):
     start = node
     actions = []
     visited = []
@@ -164,14 +121,11 @@ def checkDeadendDFS(env, node):
     fringe = Stack()
     fringe.push((start, actions))
     
-    d = 500
+    d = 1000
 
     while not fringe.isEmpty():
         current, actions = fringe.pop()
-        #print("Action Length: " + str(len(actions)))
-        if len(actions) == 30:
-            print("Path good")
-            print(actions)
+        if len(actions) == maxdepth:
             return False
         
         d -= 1
@@ -182,7 +136,6 @@ def checkDeadendDFS(env, node):
             if successor not in visited:
                 visited.append(successor)
                 fringe.push((successor, actions + [action]))
-    print("Deadend")
     return True
 
 def survive(env):
@@ -190,19 +143,22 @@ def survive(env):
     actions = []
     visited = []
     visited.append(start)
-    fringe = Queue()
+    fringe = Stack()
     fringe.__init__()
     fringe.push((start, actions))
-    depth = 5
+    depth = 0
+    max_step = 600
 
     while not fringe.isEmpty():
         current, actions = fringe.pop()
-        print("Survival")
-        print(len(actions))
+        
         if len(actions) > depth:
-            if not checkDeadendDFS(env, current):
+            if not checkDeadendDFS(env, current, len(start)):
                 return actions
         
+        max_step -= 1
+        if max_step < 0:
+            return []
         for successor, action, stepCost in env.getSuccessors(current):
             if successor not in visited:
                 visited.append(successor)
@@ -210,49 +166,38 @@ def survive(env):
     return actions
 
 def gameLoop(env):
-
-    for e in range(20):
-        max_steps = 10000
-        for i in range(max_steps):
-            actions = getActions(env)
-            print("Actions Got")
-            print(actions)
-            if actions is None or not actions:
-                actions = survive(env)
-            for a in range(len(actions)):
-                env.step(actions[a])
-        env.reset()
-        print("Reset")
-                
+    score = 0
+    max_steps = 10000
+    for i in range(max_steps):
+        actions = getActions(env)
+        if actions is None or not actions:
+            actions = survive(env)
+        if actions is None or not actions:
+            break
+        for a in range(len(actions)):
+            env.step(actions[a])
+    score = env.total
+    env.clear()
+    return score
+            
             
 
 
 if __name__ == '__main__':
 
-    params = dict()
-    params['name'] = None
-    params['epsilon'] = 1
-    params['gamma'] = .95
-    params['batch_size'] = 500
-    params['epsilon_min'] = .01
-    params['epsilon_decay'] = .995
-    params['learning_rate'] = 0.00025
-    params['layer_sizes'] = [128, 128, 128]
-
-    results = dict()
-    ep = 50
-
-    # for batchsz in [1, 10, 100, 1000]:
-    #     print(batchsz)
-    #     params['batch_size'] = batchsz
-    #     nm = ''
-    #     params['name'] = f'Batchsize {batchsz}'
-    env_infos = {'States: only walls':{'state_space':'no body knowledge'}, 'States: direction 0 or 1':{'state_space':''}, 'States: coordinates':{'state_space':'coordinates'}, 'States: no direction':{'state_space':'no direction'}}
-
-    # for key in env_infos.keys():
-    #     params['name'] = key
-    #     env_info = env_infos[key]
-    #     print(env_info)
-    #     env = Snake(env_info=env_info)
-    env = Snake()
-    actions = gameLoop(env)    
+    scores = []
+    ep = 100
+    
+    
+    for e in range(ep):
+        print("Episode: " + str(e))
+        env = Snake()
+        score = gameLoop(env)
+        scores.append(score)
+    
+    plt.plot(range(1,ep+1),scores)
+    plt.xlabel("Episodes", fontsize = 14)
+    plt.ylabel("Scores", fontsize = 14)
+    plt.title("Graph Search - Scores For Every Episode")
+    plt.show()
+    

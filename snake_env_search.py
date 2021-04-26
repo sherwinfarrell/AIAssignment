@@ -13,7 +13,7 @@ WIDTH = 20       # number of steps horizontally from wall to wall of screen
 PIXEL_H = 20*HEIGHT  # pixel height + border on both sides
 PIXEL_W = 20*WIDTH   # pixel width + border on both sides
 
-SLEEP = 0.2     # time to wait between steps
+SLEEP = 0.0     # time to wait between steps
 
 GAME_TITLE = 'Snake'
 BG_COLOR = 'white'
@@ -139,7 +139,6 @@ class Snake(gym.Env):
             while True:
                 self.apple.x, self.apple.y = self.random_coordinates()
                 self.apple.goto(round(self.apple.x*20), round(self.apple.y*20))
-                print("Apple Position: " + str(self.apple.x) + ", " + str(self.apple.y))
                 if not self.body_check_apple():
                     break
             if not first:
@@ -353,7 +352,6 @@ class Snake(gym.Env):
                     int(wall_up or body_up), int(wall_right or body_right), int(wall_down or body_down), int(wall_left or body_left), \
                     int(self.snake.direction == 'up'), int(self.snake.direction == 'right'), int(self.snake.direction == 'down'), int(self.snake.direction == 'left')]
             
-        # print(state)
         return state
     
     def directionToVector(self, action):
@@ -382,9 +380,7 @@ class Snake(gym.Env):
             x = node[0][0]
             y = node[0][1]
             dx, dy = self.directionToVector(action)
-            #print("Dx and Dy: " + str(dx) + ", " + str(dy))
             nextx, nexty = int(x + dx), int(y + dy)
-            #print("Nx and Ny: " + str(nextx) + ", " + str(nexty))
             futureNode = deepcopy(node)
             
             if len(futureNode) > 0:
@@ -404,6 +400,9 @@ class Snake(gym.Env):
         
     def bye(self):
         self.win.bye()
+        
+    def clear(self):
+        self.win.clear()
 
 
 
