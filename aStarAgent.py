@@ -112,7 +112,7 @@ def getActions(env):
                     pQueue.push((nextNode, newAction, newCostToNode),heuristicCost)
 
 
-# Depth First Search
+# Depth First Search forward checking
 def checkDeadendDFS(env, node, maxdepth):
     start = node
     actions = []
